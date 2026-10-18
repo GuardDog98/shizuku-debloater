@@ -1,6 +1,6 @@
 package com.example.shizukudebloater
 
-import moe.shizuku.api.Shizuku
+import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
