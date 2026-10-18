@@ -1,2 +1,8 @@
 USE AT YOUR OWN RISK — NO WARRANTY
+
 This software is provided under the MIT License. The authors provide no warranty regarding its use and are not responsible for any damages, data loss, or other liabilities that may occur from using this software. Users must ensure they have permission to modify the device and understand possible consequences (app behavior changes, loss of functionality, bricking).
+
+Important safety notes added in this version:
+- Force remove (system-level deletion) requires Shizuku running as root and explicit expert-mode.
+- Force remove requires typing the exact package name to confirm.
+- Always test on non-critical devices/emulators first.

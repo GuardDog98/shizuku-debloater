@@ -4,9 +4,10 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Button
-import android.widget.Switch
-import android.widget.Toast
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.inputmethod.EditorInfo
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -86,32 +87,76 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onPackageAction(entry: AppEntry, action: PackageAction) {
-        val expert = prefs.getBoolean("expert_mode", false)
-        if (!expert && entry.isSystem) {
-            AlertDialog.Builder(this)
-                .setTitle("System app")
-                .setMessage("${entry.label} appears to be a system app. In non-expert mode we recommend only disabling. Enable expert mode to allow uninstall. Continue?")
-                .setPositiveButton("Continue") { _, _ -> performAction(entry, action) }
-                .setNegativeButton("Cancel", null)
-                .show()
-            return
+        when (action) {
+            PackageAction.DISABLE -> confirmAndPerform(entry, "pm disable-user --user 0 ${entry.packageName}")
+            PackageAction.UNINSTALL -> confirmAndPerform(entry, "pm uninstall --user 0 ${entry.packageName}")
+            PackageAction.FORCE -> {
+                val expert = prefs.getBoolean("expert_mode", false)
+                if (!expert) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Expert mode required")
+                        .setMessage("Force remove is available only in Expert mode. Enable Expert mode to continue.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                    return
+                }
+                // Check root
+                scope.launch {
+                    val isRoot = withContext(Dispatchers.IO) { checkIsRoot() }
+                    if (!isRoot) {
+                        AlertDialog.Builder(this@MainActivity)
+                            .setTitle("Root required")
+                            .setMessage("Force remove requires Shizuku running with root privileges. Current session does not appear to be root. Aborting.")
+                            .setPositiveButton("OK", null)
+                            .show()
+                        return@launch
+                    }
+
+                    // Double-confirm dialog requiring exact package name input
+                    val input = EditText(this@MainActivity).apply {
+                        hint = "Type package name to confirm"
+                        imeOptions = EditorInfo.IME_ACTION_DONE
+                    }
+                    val dialog = AlertDialog.Builder(this@MainActivity)
+                        .setTitle("Force remove ${entry.packageName}")
+                        .setMessage("This will attempt to permanently remove the package from the system partition. This is dangerous and may brick the device. Type the package name exactly to confirm.")
+                        .setView(input)
+                        .setPositiveButton("Remove", null)
+                        .setNegativeButton("Cancel", null)
+                        .create()
+
+                    dialog.setOnShowListener {
+                        val btn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                        btn.isEnabled = false
+                        input.addTextChangedListener(object : TextWatcher {
+                            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                                btn.isEnabled = s?.toString() == entry.packageName
+                            }
+                            override fun afterTextChanged(s: Editable?) {}
+                        })
+                        btn.setOnClickListener {
+                            dialog.dismiss()
+                            // perform force remove
+                            scope.launch {
+                                performForceRemove(entry)
+                            }
+                        }
+                    }
+                    dialog.show()
+                }
+            }
         }
-        performAction(entry, action)
     }
 
-    private fun performAction(entry: AppEntry, action: PackageAction) {
-        val cmd = when (action) {
-            PackageAction.DISABLE -> "pm disable-user --user 0 ${entry.packageName}"
-            PackageAction.UNINSTALL -> "pm uninstall --user 0 ${entry.packageName}"
-        }
-
+    private fun confirmAndPerform(entry: AppEntry, cmd: String) {
         AlertDialog.Builder(this)
             .setTitle("Confirm")
             .setMessage("This will run: $cmd\nProceed?")
             .setPositiveButton("Yes") { _, _ ->
                 scope.launch {
                     val out = withContext(Dispatchers.IO) { runShizukuShell(cmd) }
-                    if (action == PackageAction.UNINSTALL) ActionLog.recordUninstall(this@MainActivity, entry.packageName)
+                    if (cmd.startsWith("pm uninstall") && out.contains("Success")) ActionLog.recordUninstall(this@MainActivity, entry.packageName)
                     Toast.makeText(this@MainActivity, out.takeIf { it.isNotBlank() } ?: "Done", Toast.LENGTH_LONG).show()
                     scanPackages()
                 }
@@ -120,17 +165,82 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // Allows restoring previously-uninstalled packages (install-existing)
-    private fun restorePackage(pkg: String) {
-        scope.launch {
-            val out = withContext(Dispatchers.IO) { runShizukuShell("cmd package install-existing $pkg") }
-            Toast.makeText(this@MainActivity, out.takeIf { it.isNotBlank() } ?: "Restore attempted", Toast.LENGTH_LONG).show()
+    private suspend fun checkIsRoot(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val idOut = runShizukuShell("id")
+            return@withContext idOut?.contains("uid=0") == true
+        } catch (e: Exception) {
+            return@withContext false
+        }
+    }
+
+    private suspend fun performForceRemove(entry: AppEntry) = withContext(Dispatchers.IO) {
+        val pkg = entry.packageName
+        val results = StringBuilder()
+        // Step 1: uninstall for user (soft)
+        results.appendLine("pm uninstall --user 0 $pkg")
+        results.appendLine(runShizukuShellSync("pm uninstall --user 0 $pkg"))
+
+        // Step 2: find APK path
+        results.appendLine("pm path $pkg")
+        val pathOut = runShizukuShellSync("pm path $pkg").lines().firstOrNull()?.removePrefix("package:")
+        if (pathOut.isNullOrBlank()) {
+            results.appendLine("APK path not found — may already be removed from system or package manager can't locate it.")
+            withContext(Dispatchers.Main) {
+                ActionLog.recordUninstall(this@MainActivity, pkg)
+                Toast.makeText(this@MainActivity, results.toString(), Toast.LENGTH_LONG).show()
+                scanPackages()
+            }
+            return@withContext
+        }
+
+        results.appendLine("Found path: $pathOut")
+
+        // Step 3: try remount variants
+        val remountCmds = listOf(
+            "mount -o remount,rw /system",
+            "mount -o remount,rw /",
+            "mount -o rw,remount /system",
+            "mount -o remount,rw /system_root",
+            "mount -o remount,rw /system_root/system"
+        )
+        var remounted = false
+        for (cmd in remountCmds) {
+            results.appendLine("Trying: $cmd")
+            val r = runShizukuShellSync(cmd)
+            results.appendLine(r)
+            if (!r.contains("No such file or directory") && !r.contains("not found") ) {
+                remounted = true
+                break
+            }
+        }
+
+        // Step 4: attempt delete
+        results.appendLine("rm -f $pathOut")
+        results.appendLine(runShizukuShellSync("rm -f $pathOut"))
+        results.appendLine(runShizukuShellSync("sync"))
+
+        // Optional: try restorecon
+        results.appendLine(runShizukuShellSync("restorecon -v $pathOut"))
+
+        // Record action
+        ActionLog.recordUninstall(this@MainActivity, pkg)
+
+        withContext(Dispatchers.Main) {
+            Toast.makeText(this@MainActivity, "Force remove finished. See log for details (Toast may truncate).", Toast.LENGTH_LONG).show()
+            // For convenience show a dialog with short log
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("Force remove log")
+                .setMessage(results.toString())
+                .setPositiveButton("OK", null)
+                .show()
             scanPackages()
         }
     }
 
-    private fun runShizukuShell(command: String): String {
-        try {
+    // Helper to run shell synchronously inside IO dispatcher (used by force remove steps)
+    private fun runShizukuShellSync(command: String): String {
+        return try {
             val proc = Shizuku.newProcess(arrayOf("sh", "-c", command))
             val br = BufferedReader(InputStreamReader(proc.inputStream))
             val out = StringBuilder()
@@ -143,9 +253,29 @@ class MainActivity : AppCompatActivity() {
             br.close()
             val err = proc.errorStream.bufferedReader().readText()
             if (err.isNotBlank()) out.appendLine("ERR: $err")
-            return out.toString().trim()
+            out.toString().trim()
         } catch (e: Exception) {
-            return "Error: ${e.message}"
+            "Error: ${e.message}"
+        }
+    }
+
+    private fun runShizukuShell(command: String): String {
+        return try {
+            val proc = Shizuku.newProcess(arrayOf("sh", "-c", command))
+            val br = BufferedReader(InputStreamReader(proc.inputStream))
+            val out = StringBuilder()
+            var line: String? = br.readLine()
+            while (line != null) {
+                out.appendLine(line)
+                line = br.readLine()
+            }
+            proc.waitFor()
+            br.close()
+            val err = proc.errorStream.bufferedReader().readText()
+            if (err.isNotBlank()) out.appendLine("ERR: $err")
+            out.toString().trim()
+        } catch (e: Exception) {
+            "Error: ${e.message}"
         }
     }
 

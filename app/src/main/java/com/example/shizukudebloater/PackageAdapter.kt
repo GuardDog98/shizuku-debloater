@@ -1,7 +1,5 @@
 package com.example.shizukudebloater
 
-import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
@@ -13,15 +11,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
-enum class PackageAction { DISABLE, UNINSTALL }
+enum class PackageAction { DISABLE, UNINSTALL, FORCE }
 
 class PackageAdapter(private val onAction: (AppEntry, PackageAction) -> Unit)
     : ListAdapter<AppEntry, PackageAdapter.VH>(DIFF) {
 
-    private var pm: PackageManager? = null
+    private var pm = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        pm = parent.context.packageManager
         val v = LayoutInflater.from(parent.context).inflate(R.layout.item_package, parent, false)
         return VH(v)
     }
@@ -36,13 +33,14 @@ class PackageAdapter(private val onAction: (AppEntry, PackageAction) -> Unit)
         private val tvLabel: TextView = view.findViewById(R.id.tvLabel)
         private val btnDisable: Button = view.findViewById(R.id.btnDisable)
         private val btnUninstall: Button = view.findViewById(R.id.btnUninstall)
+        private val btnForce: Button = view.findViewById(R.id.btnForce)
         private val ivIcon: ImageView = view.findViewById(R.id.ivIcon)
 
         fun bind(entry: AppEntry) {
             tvPackage.text = entry.packageName
             tvLabel.text = entry.label
             try {
-                val icon: Drawable? = pm?.getApplicationIcon(entry.packageName)
+                val icon: Drawable? = itemView.context.packageManager.getApplicationIcon(entry.packageName)
                 ivIcon.setImageDrawable(icon)
             } catch (e: Exception) {
                 ivIcon.setImageResource(android.R.drawable.sym_def_app_icon)
@@ -50,9 +48,13 @@ class PackageAdapter(private val onAction: (AppEntry, PackageAction) -> Unit)
 
             btnDisable.setOnClickListener { onAction(entry, PackageAction.DISABLE) }
             btnUninstall.setOnClickListener { onAction(entry, PackageAction.UNINSTALL) }
+            btnForce.setOnClickListener { onAction(entry, PackageAction.FORCE) }
 
-            // Make system apps visually distinct
-            itemView.alpha = if (entry.isSystem) 0.9f else 1f
+            // Show force button only for system apps (visibility controlled by adapter)
+            btnForce.visibility = if (entry.isSystem) View.VISIBLE else View.GONE
+
+            // Slight visual hint for system apps
+            itemView.alpha = if (entry.isSystem) 0.95f else 1f
         }
     }
 
