@@ -3,7 +3,7 @@ plugins {
     id 'kotlin-android'
 }
 
-android {
+android {    namespace 'com.example.shizukudebloater'
     compileSdk 33
 
     defaultConfig {
