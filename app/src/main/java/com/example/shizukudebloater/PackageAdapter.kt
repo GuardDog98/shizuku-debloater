@@ -11,8 +11,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
-enum class PackageAction { DISABLE, UNINSTALL, FORCE }
-
 class PackageAdapter(private val onAction: (AppEntry, PackageAction) -> Unit)
     : ListAdapter<AppEntry, PackageAdapter.VH>(DIFF) {
 
