@@ -1,0 +1,29 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.example.shizukudebloater"
+        minSdk 23
+        targetSdk 33
+        versionCode 1
+        versionName "0.1"
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    kotlinOptions { jvmTarget = '1.8' }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "androidx.recyclerview:recyclerview:1.3.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+    // Shizuku API (use latest stable version; replace if newer exists)
+    implementation "dev.rikka.shizuku:api:13.1.5"
+    // Coroutines for background work
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"
+}

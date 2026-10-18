@@ -1,0 +1,2 @@
+USE AT YOUR OWN RISK — NO WARRANTY
+This software is provided under the MIT License. The authors provide no warranty regarding its use and are not responsible for any damages, data loss, or other liabilities that may occur from using this software. Users must ensure they have permission to modify the device and understand possible consequences (app behavior changes, loss of functionality, bricking).
