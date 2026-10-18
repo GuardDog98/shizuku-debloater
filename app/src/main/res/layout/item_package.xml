@@ -1,25 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="wrap_content"
     android:padding="8dp">
 
+    <ImageView
+        android:id="@+id/ivIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:contentDescription="app icon"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="App label"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        app:layout_constraintStart_toEndOf="@id/ivIcon"
+        app:layout_constraintTop_toTopOf="@id/ivIcon"
+        app:layout_constraintEnd_toStartOf="@id/btnDisable"
+        android:ellipsize="end"
+        android:maxLines="1"/>
+
     <TextView
         android:id="@+id/tvPackage"
-        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:text="com.example.app"
-        android:textSize="14sp"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="@id/tvLabel"
+        app:layout_constraintTop_toBottomOf="@id/tvLabel"
+        app:layout_constraintEnd_toStartOf="@id/btnDisable"
         android:ellipsize="end"
         android:maxLines="1"/>
 
     <Button
         android:id="@+id/btnDisable"
         android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Disable"/>
+        android:text="Disable"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnUninstall"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="8dp"/>
 
     <Button
         android:id="@+id/btnUninstall"
         android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Uninstall"/>
+        android:text="Uninstall"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <!-- Constraints (simple) -->
 </androidx.constraintlayout.widget.ConstraintLayout>
