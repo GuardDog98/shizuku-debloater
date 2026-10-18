@@ -10,6 +10,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -49,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         switchExpert.isChecked = UserPreferences.isExpertMode(this)
         switchExpert.setOnCheckedChangeListener { _, isChecked ->
             UserPreferences.setExpertMode(this, isChecked)
+            Toast.makeText(this, if (isChecked) "Expert mode enabled" else "Safe mode enabled", Toast.LENGTH_SHORT).show()
         }
 
         btnRefresh.setOnClickListener { checkPermissionAndScan() }
@@ -56,9 +58,7 @@ class MainActivity : AppCompatActivity() {
         btnRestore.setOnClickListener { startActivity(android.content.Intent(this, RestoreActivity::class.java)) }
         etFilter.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filterPackages(s?.toString() ?: "")
-            }
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { filterPackages(s?.toString() ?: "") }
             override fun afterTextChanged(s: Editable?) {}
         })
 
@@ -120,11 +120,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun onPackageAction(entry: AppEntry, action: PackageAction) {
         when (action) {
-            PackageAction.DISABLE -> confirmAndPerform(entry, "pm disable-user --user 0 ${entry.packageName}")
-            PackageAction.UNINSTALL -> confirmAndPerform(entry, "pm uninstall --user 0 ${entry.packageName}")
+            PackageAction.DISABLE -> {
+                if (entry.isSystem) {
+                    showRiskDialog("System app warning", riskSummary(entry, action))
+                }
+                confirmAndPerform(entry, "pm disable-user --user 0 ${entry.packageName}")
+            }
+            PackageAction.UNINSTALL -> {
+                if (entry.isSystem) {
+                    showRiskDialog("System app warning", riskSummary(entry, action))
+                }
+                confirmAndPerform(entry, "pm uninstall --user 0 ${entry.packageName}")
+            }
             PackageAction.FORCE -> {
                 if (!UserPreferences.isExpertMode(this)) {
-                    showRiskDialog("Expert mode required", "Force remove is disabled in Safe mode. Enable Expert mode to continue.")
+                    showRiskDialog("Expert mode required", "Force remove is disabled in Safe mode. It requires Expert mode, root, and package-name confirmation.")
                     return
                 }
                 scope.launch {
@@ -140,7 +150,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     val dialog = AlertDialog.Builder(this@MainActivity)
                         .setTitle("Force remove ${entry.packageName}")
-                        .setMessage("This will attempt to delete the APK from the system partition. It may impact boot or cause data loss.\n\nAPK path: ${path ?: "unknown"}\n\nType the package name exactly to confirm.")
+                        .setMessage("${riskSummary(entry, action)}\n\nAPK path: ${path ?: "unknown"}\n\nType the package name exactly to confirm.")
                         .setView(input)
                         .setPositiveButton("Remove", null)
                         .setNegativeButton("Cancel", null)
@@ -165,6 +175,24 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun riskSummary(entry: AppEntry, action: PackageAction): String {
+        val parts = mutableListOf<String>()
+        if (entry.isSystem) {
+            parts.add("This is a system app; removing it may affect boot, vendor services, or the Android framework.")
+        }
+        if (action == PackageAction.UNINSTALL) {
+            parts.add("Uninstall for user still affects the current user profile and may remove app data or dependencies.")
+        }
+        if (action == PackageAction.FORCE) {
+            parts.add("Force remove attempts to delete the APK from the system partition and should be treated as dangerous.")
+            parts.add("It may brick the device, break updates, or leave the system in a partially restored state.")
+        }
+        if (entry.packageName.startsWith("com.android.") || entry.packageName.startsWith("com.google.")) {
+            parts.add("This package is often tightly coupled to the Android system or Google services.")
+        }
+        return "Why this is risky:\n- " + parts.joinToString("\n- ")
     }
 
     private fun confirmAndPerform(entry: AppEntry, cmd: String) {
