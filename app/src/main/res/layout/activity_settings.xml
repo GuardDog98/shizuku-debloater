@@ -1,47 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Allow list"
-        android:textStyle="bold"
-        android:textSize="18sp"/>
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <EditText
-        android:id="@+id/etAllowList"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="One package per line"
-        android:minLines="8"
-        android:gravity="top|start"
-        android:inputType="textMultiLine"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Allow list"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Ignore list"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:layout_marginTop="16dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Packages added here are protected; no actions (disable/uninstall/force) will be allowed." 
+            android:layout_marginTop="8dp"/>
 
-    <EditText
-        android:id="@+id/etIgnoreList"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="One package per line"
-        android:minLines="8"
-        android:gravity="top|start"
-        android:inputType="textMultiLine"/>
+        <EditText
+            android:id="@+id/etAllowList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="One package per line"
+            android:minLines="6"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:layout_marginTop="8dp"/>
 
-    <Button
-        android:id="@+id/btnSaveLists"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Save lists"
-        android:layout_marginTop="16dp"/>
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ignore list"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Packages here are hidden from the main list to reduce clutter." 
+            android:layout_marginTop="8dp"/>
+
+        <EditText
+            android:id="@+id/etIgnoreList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="One package per line"
+            android:minLines="6"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:layout_marginTop="8dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp">
+
+            <Button
+                android:id="@+id/btnSaveLists"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Save lists"/>
+
+            <Button
+                android:id="@+id/btnExport"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Export"/>
+
+            <Button
+                android:id="@+id/btnImport"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Import"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

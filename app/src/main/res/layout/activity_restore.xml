@@ -13,16 +13,30 @@
         android:textSize="18sp"/>
 
     <TextView
-        android:id="@+id/tvRestoreList"
+        android:id="@+id/tvHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No package history yet"
+        android:text="This list shows packages that were uninstalled via this app. Select a package name below and tap Restore." 
         android:layout_marginTop="8dp"/>
+
+    <ListView
+        android:id="@+id/lvRestore"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:choiceMode="singleChoice"/>
+
+    <EditText
+        android:id="@+id/etManualPkg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Or type package name to restore manually"/>
 
     <Button
         android:id="@+id/btnRestorePackages"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Restore selected package(s)"
+        android:text="Restore selected package"
         android:layout_marginTop="16dp"/>
+
 </LinearLayout>

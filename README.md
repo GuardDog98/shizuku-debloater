@@ -1,36 +1,24 @@
-# ShizukuDebloater (safe-by-default package manager)
+# ShizukuDebloater — safer defaults, improved UX
 
-This repo is a minimal Android app example built around Shizuku. It is designed to be safe by default and intentionally conservative.
+This repo is an example Android helper app that uses Shizuku to perform package management operations. It is intentionally conservative: safe-by-default UI, clear warnings, and explicit expert flows for dangerous operations.
 
-Main behaviors
-- Lists packages and shows app labels
-- Shows package filters
-- Safe mode: only Disable and Uninstall-for-user operations are active by default
-- Expert mode: enables a danger-only force remove flow for system apps after root plus confirmation
-- Allow list and Ignore list: user can protect important packages or hide ones they do not want to see
-- Restore panel: keeps a minimal uninstall history and acts as a restore entry point
-- APK path preview and risk dialog: before a risky operation, the app shows the package path and explains why the action is dangerous
+What's new in this iteration
+- Settings: improved UX, Export/Import of allow/ignore lists (clipboard-based copy/paste)
+- Restore panel: real restore helper using `cmd package install-existing` and a selectable history list
+- Shell helper (ShellUtils) centralizes Shizuku shell calls for reuse
+- UI utilities (UIUtils) for consistent dialogs
+- Better risk explanations in the UI and README
 
-Recommended usage
-1. Install Shizuku Manager and start it.
-2. Open this app and grant Shizuku permission.
-3. Start in Safe mode. Only non-risky actions are shown.
-4. If you really need advanced behavior, enable Expert mode and only after verifying the package path and confirming the exact package name.
-5. Prefer Disable before Uninstall, and prefer Uninstall-for-user before any system-partition deletion attempt.
+Key safety notes (read before using)
+- Safe mode is the default. Expert mode unlocks force-remove for system apps but requires Shizuku to run as root.
+- Force-remove attempts to delete APK files from the system partition. This can break your device and should be used only on test devices/emulators.
+- Restore helper uses `cmd package install-existing` which only succeeds if the APK is still present in a system image or cached in a user data location.
 
-Important safety notes
-- Force remove is intentionally dangerous and can affect boot stability or render a device unusable.
-- It should only be used on a spare device, test handset, or emulator with a known-good recovery path.
-- If you are not comfortable with root access, system partition edits, or remount operations, do not use Force remove.
-- This app is not a guarantee of safety; the developer, maintainer, and repository owners are not liable for device damage or data loss.
+How to use
+- Install Shizuku Manager and start it (for force-remove start it in root mode if you understand the risks).
+- Launch app, grant Shizuku permission.
+- Use Settings to manage allow/ignore lists (export/import via clipboard).
+- Use Restore to attempt restores where possible.
 
-Project structure
-- MainActivity.kt — main package list and command execution
-- SettingsActivity.kt — allow/ignore list editor
-- RestoreActivity.kt — restore panel and package history
-- README.md — usage and safety notes
-- DISCLAIMER.txt — legal warnings and liability disclaimer
-- LICENSE — MIT license
-
-Legal note
-This project is provided under the MIT License but that does not eliminate the risk of device damage or liability. The applicable laws in your jurisdiction may impose additional restrictions. Use this project only on devices you own and are permitted to modify.
+Legal & warranty
+This project is provided under the MIT License. There is no warranty. The authors are not responsible for damages or data loss. Always test on non-critical devices.
