@@ -1,8 +1,10 @@
 USE AT YOUR OWN RISK — NO WARRANTY
 
-This software is provided under the MIT License. The authors provide no warranty regarding its use and are not responsible for any damages, data loss, or other liabilities that may occur from using this software. Users must ensure they have permission to modify the device and understand possible consequences (app behavior changes, loss of functionality, bricking).
+This software is provided under the MIT License. The authors provide no warranty regarding its use and are not responsible for any damages, data loss, or other liabilities that may occur from using this software. Users must ensure they have permission to modify the device and understand possible consequences (app behavior changes, loss of functionality, boot failures, bricking).
 
-Important safety notes added in this version:
-- Force remove (system-level deletion) requires Shizuku running as root and explicit expert-mode.
-- Force remove requires typing the exact package name to confirm.
-- Always test on non-critical devices/emulators first.
+Important safety notes for this version:
+- Safe mode is the default.
+- Expert mode allows force-remove actions that are intentionally more dangerous and require root access.
+- Force remove attempts to delete APK files from the system partition; this can cause loss of functionality or device instability.
+- Always test on a spare device or emulator before using dangerous system-app operations.
+- Use Disable or Uninstall-for-user first, and never operate on a device you are not allowed to modify.

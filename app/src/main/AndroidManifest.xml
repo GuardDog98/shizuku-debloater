@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest package="com.example.shizukudebloater" xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Shizuku permission -->
     <uses-permission android:name="moe.shizuku.manager.permission.API" />
 
     <application
         android:label="ShizukuDebloater"
         android:allowBackup="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".MainActivity"
-            android:exported="true">
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".RestoreActivity" android:exported="false" />
     </application>
 </manifest>
